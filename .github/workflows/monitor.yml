@@ -1,0 +1,55 @@
+name: Website Status Monitor
+
+on:
+  schedule:
+    # Morning check: 7:00 AM WIB (00:00 UTC)
+    - cron: "0 0 * * *"
+    # Afternoon check: 2:00 PM WIB (07:00 UTC)
+    - cron: "0 7 * * *"
+  # Manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      report_time:
+        description: "Report label (morning / afternoon / test)"
+        required: false
+        default: "test"
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Determine report time
+        id: time
+        run: |
+          if [ "${{ github.event.inputs.report_time }}" != "" ]; then
+            echo "report_time=${{ github.event.inputs.report_time }}" >> $GITHUB_OUTPUT
+          else
+            HOUR=$(date -u +%H)
+            if [ "$HOUR" -lt "4" ]; then
+              echo "report_time=morning" >> $GITHUB_OUTPUT
+            else
+              echo "report_time=afternoon" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Run website monitor
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          REPORT_TIME: ${{ steps.time.outputs.report_time }}
+          WEBSITES: ${{ secrets.WEBSITES }}
+        run: node monitor.js

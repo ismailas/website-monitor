@@ -1,0 +1,14 @@
+{
+  "name": "website-monitor",
+  "version": "1.0.0",
+  "description": "Automated website status monitor powered by Claude AI",
+  "type": "module",
+  "main": "monitor.js",
+  "scripts": {
+    "start": "node monitor.js"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2",
+    "nodemailer": "^6.9.13"
+  }
+}
